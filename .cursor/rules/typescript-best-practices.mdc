@@ -1,0 +1,172 @@
+---
+
+globs: *.ts,*.tsx
+description: TypeScript usage in an Expo React Native app — config, patterns, and conventions
+---
+
+---
+
+# TypeScript in Expo React Native
+
+## Project Config (tsconfig)
+
+- Extend Expo’s base config and keep `strict: true`
+- Preserve `expo-env.d.ts` and `.expo` includes
+- Use `@/*` alias for app-local imports only
+
+## Components & Props
+
+- Prefer **function declarations** over expressions
+- Avoid `React.FC`; declare explicit `Props` types
+- Type `children` as `React.ReactNode` only when needed
+
+```tsx
+type UserCardProps = {
+  name: string;
+  avatarUrl?: string;
+  children?: React.ReactNode;
+};
+
+export function UserCard({ name, avatarUrl, children }: UserCardProps) {
+  return avatarUrl ? <Image source={{ uri: avatarUrl }} /> : null;
+}
+```
+
+- For wrappers, derive props from RN primitives
+
+```tsx
+type PressableTextProps = React.ComponentPropsWithoutRef<typeof Pressable> & {
+  text: string;
+};
+
+export function PressableText({ text, ...rest }: PressableTextProps) {
+  return (
+    <Pressable {...rest}>
+      <Text>{text}</Text>
+    </Pressable>
+  );
+}
+```
+
+## State & Types
+
+- No `any`. Use precise unions and `unknown` + narrowing
+- Use descriptive generic names and `Array<T>` syntax
+
+```tsx
+type AuthUser = { id: string; email: string };
+
+const [user, setUser] = React.useState<AuthUser | null>(null);
+const [queue, setQueue] = React.useState<Array<string>>([]);
+```
+
+- Prefer `as const` and `satisfies` to keep literals narrow
+
+```ts
+const theme = {
+  spacing: { sm: 8, md: 12, lg: 16 },
+} as const satisfies {
+  spacing: Record<"sm" | "md" | "lg", number>;
+};
+```
+
+## Type Narrowing & Exhaustiveness
+
+- Use explicit guards and exhaustive switches for discriminated unions
+
+```ts
+type LoadState =
+  | { status: "idle" }
+  | { status: "loading" }
+  | { status: "error"; message: string }
+  | { status: "success"; data: Array<string> };
+
+function isLoaded(
+  s: LoadState
+): s is Extract<LoadState, { status: "success" }> {
+  return s.status === "success";
+}
+```
+
+## Routing (Expo Router)
+
+- Use **typed routes** and absolute `href` paths
+- Type search params with the route’s module path
+
+```tsx
+import { Link, useLocalSearchParams } from "expo-router";
+
+export function GoToProfile() {
+  return <Link href="/profile/123" />;
+}
+
+export default function ProfileScreen() {
+  const { id } = useLocalSearchParams<"app/(tabs)/profile/[id].tsx">();
+  return <Text>{id}</Text>;
+}
+```
+
+## Styles & RN APIs
+
+- Let `StyleSheet.create` infer types
+- Use typed callbacks for style props
+
+```ts
+const pressableStyle: React.ComponentProps<typeof Pressable>["style"] = ({
+  pressed,
+}) => [styles.base, pressed ? styles.pressed : null];
+```
+
+- Prefer literal unions for tokens
+
+```ts
+type SpacingKey = "sm" | "md" | "lg";
+const spacing: Record<SpacingKey, number> = { sm: 8, md: 12, lg: 16 };
+```
+
+## Modules & Imports
+
+- Use the `@/*` alias for local modules
+
+```ts
+import { fetchSession } from "@/lib/session";
+import { colors } from "@/theme/colors";
+```
+
+- Don’t override Expo/Metro resolution without a clear reason
+
+## Error Boundaries & Strictness
+
+- Keep `"strict": true`
+- Consider `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` for libs/utilities (opt-in only if ergonomics remain good)
+
+## Interop & Boundaries
+
+- Avoid `as` casts except at trust boundaries (native modules, JSON)
+- Prefer runtime validation for external data
+
+```ts
+type ApiResponse<TData> =
+  | {
+      ok: true;
+      data: TData;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
+```
+
+## Testing (TS)
+
+- Write tests in TS
+- Don’t export internal types solely for tests
+- Use type-level assertions (e.g., `expectTypeOf`) in utility packages when needed
+
+## Conventions
+
+- Descriptive type names (`UserProfile`, `ApiResponse<TData>`)
+- `Array<T>` over `T[]`
+- Prefer `cond ? <X /> : null` over `cond && <X />`
+- Avoid `enum` and `namespace`; prefer union literals and objects
+- Keep public exports named (avoid default for types)

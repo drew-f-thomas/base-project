@@ -1,0 +1,5 @@
+# Run linting on staged files
+yarn lint-staged
+
+# Run tests to ensure nothing is broken
+yarn jest --passWithNoTests --watchAll=false

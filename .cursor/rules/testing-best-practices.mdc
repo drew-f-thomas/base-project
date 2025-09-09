@@ -1,0 +1,283 @@
+---
+globs: *.test.ts,*.test.tsx,*.spec.ts,*.spec.tsx,__tests__/**
+description: Testing best practices for React Native and Expo applications
+---
+
+# Testing Best Practices
+
+## Test Structure & Organization
+
+### File Naming
+- Use `.test.tsx` for component tests
+- Use `.test.ts` for utility/hook tests
+- Place tests in `__tests__/` directory mirroring source structure
+- Use descriptive test file names: `Button.test.tsx`, `useAuth.test.ts`
+
+### Test Organization
+```tsx
+// ✅ Good - Well organized test
+describe('Button Component', () => {
+  describe('Rendering', () => {
+    it('renders with default props', () => {
+      // test implementation
+    });
+  });
+
+  describe('Interactions', () => {
+    it('calls onPress when pressed', () => {
+      // test implementation
+    });
+  });
+});
+```
+
+## Component Testing
+
+### Use Custom Render with Theme
+Always use the custom render function from test utils:
+
+```tsx
+// ✅ Good - Use custom render
+import { render, screen } from '@testing-library/react-native';
+import { Text } from '@/components/theme-components';
+
+test('renders text component', () => {
+  render(<Text>Hello World</Text>);
+  expect(screen.getByText('Hello World')).toBeTruthy();
+});
+
+// ❌ Bad - Direct React Native Testing Library import
+import { render } from '@testing-library/react-native';
+```
+
+### Test Component Props
+Test all component variants and props:
+
+```tsx
+// ✅ Good - Test all variants
+describe('Text Component', () => {
+  it('renders with title variant', () => {
+    render(<Text variant="title">Title</Text>);
+    expect(screen.getByText('Title')).toBeTruthy();
+  });
+
+  it('renders with body variant', () => {
+    render(<Text variant="body">Body</Text>);
+    expect(screen.getByText('Body')).toBeTruthy();
+  });
+});
+```
+
+### Test User Interactions
+Focus on behavior, not implementation:
+
+```tsx
+// ✅ Good - Test user behavior
+it('calls onPress when button is pressed', () => {
+  const onPress = jest.fn();
+  render(<Pressable onPress={onPress}>Click me</Pressable>);
+  
+  fireEvent.press(screen.getByText('Click me'));
+  expect(onPress).toHaveBeenCalledTimes(1);
+});
+
+// ❌ Bad - Test implementation details
+it('has correct style properties', () => {
+  render(<Pressable variant="button">Click me</Pressable>);
+  // Don't test internal style properties
+});
+```
+
+## Hook Testing
+
+### Use renderHook for Custom Hooks
+```tsx
+// ✅ Good - Test custom hooks
+import { renderHook } from '@testing-library/react-native';
+import { useTheme } from '@/hooks/useTheme';
+
+test('returns theme object', () => {
+  const { result } = renderHook(() => useTheme());
+  
+  expect(result.current).toHaveProperty('colors');
+  expect(result.current).toHaveProperty('spacing');
+});
+```
+
+### Mock Dependencies
+Mock external dependencies properly:
+
+```tsx
+// ✅ Good - Mock dependencies
+jest.mock('@/hooks/useColorScheme', () => ({
+  useColorScheme: jest.fn(() => 'light'),
+}));
+```
+
+## State Management Testing
+
+### Test Zustand Stores
+Test stores independently of components:
+
+```tsx
+// ✅ Good - Test store directly
+import { useUserStore } from '@/store/userStore';
+
+test('updates user state', () => {
+  const store = useUserStore.getState();
+  store.setUserName('John Doe');
+  
+  expect(useUserStore.getState().userName).toBe('John Doe');
+});
+```
+
+## Mocking Patterns
+
+### Mock Expo Modules
+Use the provided mocks in `__tests__/mocks/`:
+
+```tsx
+// ✅ Good - Use existing mocks
+jest.mock('expo-constants', () => require('@/__tests__/mocks/expo-constants'));
+```
+
+### Mock Async Operations
+Mock async operations properly:
+
+```tsx
+// ✅ Good - Mock async operations
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  getItem: jest.fn(() => Promise.resolve('stored-value')),
+  setItem: jest.fn(() => Promise.resolve()),
+}));
+```
+
+## Test Utilities
+
+### Use Test Utilities
+Leverage the custom test utilities:
+
+```tsx
+// ✅ Good - Use test utilities
+import { render, mockTheme } from '@/__tests__/utils/test-utils';
+
+test('uses theme colors', () => {
+  render(<Text color="tint">Themed text</Text>);
+  // Test will have access to theme context
+});
+```
+
+### Create Helper Functions
+Create reusable test helpers:
+
+```tsx
+// ✅ Good - Helper function
+const renderWithTheme = (component: React.ReactElement) => {
+  return render(component, { wrapper: ThemeProvider });
+};
+```
+
+## Best Practices
+
+### Test Behavior, Not Implementation
+```tsx
+// ✅ Good - Test what the user sees
+it('displays error message when validation fails', () => {
+  render(<Form onSubmit={jest.fn()} />);
+  fireEvent.press(screen.getByText('Submit'));
+  expect(screen.getByText('Please fill in all fields')).toBeTruthy();
+});
+
+// ❌ Bad - Test implementation details
+it('sets error state to true', () => {
+  // Don't test internal state
+});
+```
+
+### Keep Tests Fast
+- Use `jest.fn()` for simple mocks
+- Avoid real network calls
+- Mock heavy operations
+
+### Use Descriptive Test Names
+```tsx
+// ✅ Good - Descriptive names
+it('displays loading spinner when data is being fetched', () => {
+  // test implementation
+});
+
+// ❌ Bad - Vague names
+it('works correctly', () => {
+  // test implementation
+});
+```
+
+### Test Edge Cases
+```tsx
+// ✅ Good - Test edge cases
+it('handles empty data gracefully', () => {
+  render(<List data={[]} />);
+  expect(screen.getByText('No items found')).toBeTruthy();
+});
+
+it('handles null props', () => {
+  render(<Component data={null} />);
+  expect(screen.getByText('Loading...')).toBeTruthy();
+});
+```
+
+## Coverage Guidelines
+
+### Focus on Critical Paths
+- Test user interactions
+- Test error states
+- Test loading states
+- Test validation logic
+
+### Don't Chase 100% Coverage
+- Focus on meaningful coverage
+- Test business logic thoroughly
+- Don't test trivial getters/setters
+
+## Common Anti-Patterns
+
+- ❌ Testing implementation details instead of behavior
+- ❌ Not mocking external dependencies
+- ❌ Overusing snapshots for dynamic content
+- ❌ Writing tests that are too coupled to implementation
+- ❌ Not testing error states and edge cases
+- ❌ Using real data instead of test data
+- ❌ Not cleaning up after tests
+
+## Snapshot Testing
+
+### Use Snapshots Wisely
+```tsx
+// ✅ Good - Static content snapshots
+it('renders static content correctly', () => {
+  const { toJSON } = render(<StaticComponent />);
+  expect(toJSON()).toMatchSnapshot();
+});
+
+// ❌ Bad - Dynamic content snapshots
+it('renders user data', () => {
+  const { toJSON } = render(<UserComponent user={mockUser} />);
+  expect(toJSON()).toMatchSnapshot(); // Will break with different user data
+});
+```
+
+## Performance Testing
+
+### Test Performance When Relevant
+```tsx
+// ✅ Good - Test performance for critical operations
+it('renders large list efficiently', () => {
+  const largeData = Array.from({ length: 1000 }, (_, i) => ({ id: i }));
+  
+  const start = performance.now();
+  render(<List data={largeData} />);
+  const end = performance.now();
+  
+  expect(end - start).toBeLessThan(100); // Should render in under 100ms
+});
+```
