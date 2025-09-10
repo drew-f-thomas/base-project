@@ -1,6 +1,6 @@
-const { defineConfig } = require('eslint/config');
-const expoConfig = require('eslint-config-expo/flat');
-const eslintPluginPrettierRecommended = require('eslint-plugin-prettier/recommended');
+const { defineConfig } = require('eslint/config')
+const expoConfig = require('eslint-config-expo/flat')
+const eslintPluginPrettierRecommended = require('eslint-plugin-prettier/recommended')
 
 module.exports = defineConfig([
   expoConfig,
@@ -14,9 +14,9 @@ module.exports = defineConfig([
           singleQuote: true,
           trailingComma: 'es5',
           tabWidth: 2,
-          semi: true,
+          semi: false,
         },
       ],
     },
   },
-]);
+])

@@ -1,5 +1,6 @@
-import { render, RenderOptions } from '@testing-library/react-native';
-import React from 'react';
+import { render, RenderOptions } from '@testing-library/react-native'
+import React from 'react'
+import { ThemeProvider } from '@/src/design-system/ThemeProvider'
 
 // Mock the useTheme hook for testing
 const mockTheme = {
@@ -49,14 +50,14 @@ const mockTheme = {
     },
   },
   colorScheme: 'light' as const,
-};
+}
 
-// Mock ThemeProvider component
+// Real ThemeProvider wrapper for tests
 const MockThemeProvider: React.FC<{ children?: React.ReactNode }> = ({
   children,
 }) => {
-  return React.createElement(React.Fragment, {}, children);
-};
+  return <ThemeProvider colorScheme="light">{children}</ThemeProvider>
+}
 
 // Custom render function that includes theme context
 const customRender = (
@@ -66,24 +67,23 @@ const customRender = (
   return render(ui, {
     wrapper: MockThemeProvider,
     ...options,
-  });
-};
+  })
+}
 
 // Re-export everything
-export * from '@testing-library/react-native';
-export { customRender as render };
+export * from '@testing-library/react-native'
+export { customRender as render }
 
 // Mock theme for use in tests
-export { mockTheme };
+export { mockTheme }
 
 // Helper function to create test components with theme
 export const createTestComponent = (Component: React.ComponentType<any>) => {
-  const TestComponent = (props: any) =>
-    React.createElement(
-      MockThemeProvider,
-      {},
-      React.createElement(Component, props)
-    );
-  TestComponent.displayName = `TestComponent(${Component.displayName || Component.name})`;
-  return TestComponent;
-};
+  const TestComponent = (props: any) => (
+    <MockThemeProvider>
+      <Component {...props} />
+    </MockThemeProvider>
+  )
+  TestComponent.displayName = `TestComponent(${Component.displayName || Component.name})`
+  return TestComponent
+}

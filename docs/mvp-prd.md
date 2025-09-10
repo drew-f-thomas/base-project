@@ -61,28 +61,28 @@ Landing → Capture → Transcribe (if audio) → Generate → Reveal → Save
 
 ```ts
 type Reflection = {
-  id: string;
-  createdAt: number;
-  inputType: 'audio' | 'text';
-  originalInput: string;
-  quote: string;
-  sourceTitle: string;
-  sourceAuthor: string;
-  sourceCitation?: string;
-  explanation: string;
-  modelId: string;
-  latencyMs: number;
-};
+  id: string
+  createdAt: number
+  inputType: 'audio' | 'text'
+  originalInput: string
+  quote: string
+  sourceTitle: string
+  sourceAuthor: string
+  sourceCitation?: string
+  explanation: string
+  modelId: string
+  latencyMs: number
+}
 ```
 
 Zustand slice:
 
 ```ts
 type ReflectionsState = {
-  reflections: Array<Reflection>;
-  addReflection: (r: Reflection) => void;
-  clearAll: () => void;
-};
+  reflections: Array<Reflection>
+  addReflection: (r: Reflection) => void
+  clearAll: () => void
+}
 ```
 
 ---
@@ -211,30 +211,30 @@ Skip steps 1–3; go straight to 4–6.
 
 ```ts
 async function transcribeAudio(input: {
-  uri: string;
-}): Promise<{ text: string }>;
+  uri: string
+}): Promise<{ text: string }>
 ```
 
 ### Generate
 
 ```ts
 type GenerateParams = {
-  text: string;
-  model: string;
-  timeoutMs?: number;
-};
+  text: string
+  model: string
+  timeoutMs?: number
+}
 
 type GenerateResult = {
-  quote: string;
-  sourceTitle: string;
-  sourceAuthor: string;
-  sourceCitation?: string;
-  explanation: string;
-  modelId: string;
-  latencyMs: number;
-};
+  quote: string
+  sourceTitle: string
+  sourceAuthor: string
+  sourceCitation?: string
+  explanation: string
+  modelId: string
+  latencyMs: number
+}
 
-async function generateReflection(p: GenerateParams): Promise<GenerateResult>;
+async function generateReflection(p: GenerateParams): Promise<GenerateResult>
 ```
 
 ---
