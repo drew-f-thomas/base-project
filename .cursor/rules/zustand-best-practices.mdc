@@ -1,0 +1,179 @@
+---
+globs: *.ts,*.tsx
+description: Zustand state management best practices and patterns
+---
+
+# Zustand Best Practices
+
+## Store Access Patterns
+
+### ✅ Use Selector Pattern (Recommended)
+
+Always use selector functions to access specific state properties:
+
+```typescript
+// ✅ Good - Only subscribes to specific state changes
+const hasFinishedOnboarding = useUserStore(
+  (state) => state.hasFinishedOnboarding
+);
+const userName = useUserStore((state) => state.userName);
+```
+
+### ❌ Avoid Destructuring Entire Store
+
+Never destructure the entire store as it causes unnecessary re-renders:
+
+```typescript
+// ❌ Bad - Subscribes to ALL state changes
+const { hasFinishedOnboarding, userName } = useUserStore();
+```
+
+## Multiple State Properties
+
+### Use `shallow` for Multiple Properties
+
+When accessing multiple state properties, use the `shallow` comparison:
+
+```typescript
+import { shallow } from "zustand/shallow";
+
+const { hasFinishedOnboarding, userName, isLoggedIn } = useUserStore(
+  (state) => ({
+    hasFinishedOnboarding: state.hasFinishedOnboarding,
+    userName: state.userName,
+    isLoggedIn: state.isLoggedIn,
+  }),
+  shallow
+);
+```
+
+## Store Structure
+
+### TypeScript Store Definition
+
+Always define proper TypeScript types for your stores:
+
+```typescript
+type UserStore = {
+  // State properties
+  hasFinishedOnboarding: boolean;
+  userName: string;
+  isLoggedIn: boolean;
+
+  // Actions
+  setHasFinishedOnboarding: (value: boolean) => void;
+  setUserName: (name: string) => void;
+  login: () => void;
+  logout: () => void;
+};
+```
+
+### Action Implementation
+
+Use proper state updates with functional updates:
+
+```typescript
+export const useUserStore = create<UserStore>((set) => ({
+  hasFinishedOnboarding: false,
+  userName: "",
+  isLoggedIn: false,
+
+  // ✅ Good - Functional update
+  setHasFinishedOnboarding: (value: boolean) =>
+    set({ hasFinishedOnboarding: value }),
+
+  // ✅ Good - Toggle pattern
+  toggleOnboarding: () =>
+    set((state) => ({ hasFinishedOnboarding: !state.hasFinishedOnboarding })),
+
+  // ✅ Good - Multiple state updates
+  login: (name: string) => set({ isLoggedIn: true, userName: name }),
+}));
+```
+
+## File Organization
+
+### Store Location
+
+Place stores in the [store/](mdc:store/) directory following the pattern:
+
+- [store/userStore.ts](mdc:store/userStore.ts) - User-related state
+- [store/appStore.ts](mdc:store/appStore.ts) - App-wide state
+- [store/featureStore.ts](mdc:store/featureStore.ts) - Feature-specific state
+
+### Import Pattern
+
+Use consistent import patterns:
+
+```typescript
+import { useUserStore } from "@/store/userStore";
+```
+
+## Performance Considerations
+
+### Minimize Re-renders
+
+- Always use selectors for single properties
+- Use `shallow` for multiple properties
+- Avoid accessing the entire store object
+
+### Store Splitting
+
+For large applications, consider splitting stores by domain:
+
+- User authentication store
+- UI state store
+- Feature-specific stores
+
+## Testing
+
+### Store Testing
+
+Test stores independently of React components:
+
+```typescript
+import { useUserStore } from "@/store/userStore";
+
+// Test store actions
+const store = useUserStore.getState();
+store.setHasFinishedOnboarding(true);
+expect(useUserStore.getState().hasFinishedOnboarding).toBe(true);
+```
+
+## Common Patterns
+
+### Computed Values
+
+Use selectors for computed values:
+
+```typescript
+const isUserReady = useUserStore(
+  (state) => state.hasFinishedOnboarding && state.isLoggedIn
+);
+```
+
+### Conditional Rendering
+
+Use selectors for conditional logic:
+
+```typescript
+const hasFinishedOnboarding = useUserStore((state) => state.hasFinishedOnboarding);
+
+if (!hasFinishedOnboarding) {
+  return <Redirect href="/onboarding" />;
+}
+```
+
+## Migration from Other State Managers
+
+### From Redux
+
+- Replace `useSelector` with Zustand selectors
+- Replace `useDispatch` with direct action calls
+- Remove Redux boilerplate (reducers, actions, etc.)
+
+### From Context API
+
+- Replace `useContext` with Zustand hooks
+- Remove Context providers
+- Simplify state access patterns

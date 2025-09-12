@@ -1,0 +1,307 @@
+---
+alwaysApply: true
+description: Design system theming patterns, spacing, typography, colors, and component styling
+---
+
+# Theme Design System
+
+## Component Re-export Pattern
+
+Use themed components from [components/theme-components/](mdc:components/theme-components/) that re-export React Native components with theme integration:
+
+```tsx
+// ✅ Good - Use themed components
+import { Text, View, Pressable } from "@/components/theme-components";
+
+// ❌ Bad - Direct React Native imports
+import { Text, View, Pressable } from "react-native";
+```
+
+## Theme Hook
+
+Use the centralized theme hook for direct access to design tokens:
+
+```tsx
+import { useTheme } from "@/hooks/useTheme";
+
+// ✅ Good - Use theme hook
+const { colors, spacing, typography, borderRadius, shadows } = useTheme();
+```
+
+## Themed Components Usage
+
+### Text Component
+
+Use variant props for consistent typography:
+
+```tsx
+// ✅ Good - Use variant props
+<Text variant="title">Main Heading</Text>
+<Text variant="body">Body text content</Text>
+<Text variant="caption" color="icon">Secondary text</Text>
+
+// ❌ Bad - Manual styling
+<Text style={{ fontSize: 32, fontWeight: 'bold' }}>Heading</Text>
+```
+
+### View Component
+
+Use variant and spacing props for consistent layouts:
+
+```tsx
+// ✅ Good - Use variant and props
+<View variant="card" padding="md" shadow="card">
+  <Text variant="h3">Card Title</Text>
+  <Text variant="body">Card content</Text>
+</View>
+
+// ❌ Bad - Manual styling
+<View style={{
+  backgroundColor: '#fff',
+  padding: 16,
+  borderRadius: 8,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3
+}}>
+```
+
+### Pressable Component
+
+Use variant props for interactive elements:
+
+```tsx
+// ✅ Good - Use variant props
+<Pressable variant="button" onPress={handlePress}>
+  <Text variant="button">Click Me</Text>
+</Pressable>
+
+// ❌ Bad - Manual styling
+<Pressable style={{
+  backgroundColor: '#007AFF',
+  padding: 12,
+  borderRadius: 8
+}}>
+```
+
+## Direct Theme Access
+
+When you need direct access to design tokens, use the theme hook:
+
+```tsx
+// ✅ Good - Use theme hook for custom styling
+const { colors, spacing, typography, borderRadius, shadows } = useTheme();
+
+const styles = StyleSheet.create({
+  container: {
+    padding: spacing.screen.horizontal,
+    marginBottom: spacing.lg,
+    backgroundColor: colors.background,
+  },
+  customCard: {
+    ...shadows.card,
+    borderRadius: borderRadius.card.medium,
+    padding: spacing.card.padding,
+  },
+});
+
+// ❌ Bad - Hardcoded values
+const styles = StyleSheet.create({
+  container: {
+    padding: 16,
+    marginBottom: 24,
+    backgroundColor: "#fff",
+  },
+});
+```
+
+## Component Props
+
+### Text Component Props
+
+```tsx
+type TextProps = {
+  variant?:
+    | "body"
+    | "title"
+    | "subtitle"
+    | "caption"
+    | "button"
+    | "link"
+    | "h1"
+    | "h2"
+    | "h3"
+    | "h4";
+  color?: "text" | "tint" | "icon" | "tabIconDefault" | "tabIconSelected";
+  lightColor?: string; // Override for light mode
+  darkColor?: string; // Override for dark mode
+  style?: TextStyle;
+};
+```
+
+### View Component Props
+
+```tsx
+type ViewProps = {
+  variant?: "card" | "button" | "input" | "default" | "elevated";
+  padding?: "xs" | "sm" | "md" | "lg" | "xl" | "xxl" | "xxxl";
+  borderRadius?: "none" | "xs" | "sm" | "md" | "lg" | "xl" | "xxl" | "full";
+  shadow?: "none" | "sm" | "md" | "lg" | "xl" | "card" | "button" | "modal";
+  backgroundColor?: "background" | "tint" | "text" | "icon";
+  lightColor?: string; // Override for light mode
+  darkColor?: string; // Override for dark mode
+  style?: ViewStyle;
+};
+```
+
+### Pressable Component Props
+
+```tsx
+type PressableProps = {
+  variant?: "button" | "card" | "default";
+  padding?: "xs" | "sm" | "md" | "lg" | "xl" | "xxl" | "xxxl";
+  borderRadius?: "none" | "xs" | "sm" | "md" | "lg" | "xl" | "xxl" | "full";
+  shadow?: "none" | "sm" | "md" | "lg" | "xl" | "card" | "button" | "modal";
+  backgroundColor?: "background" | "tint" | "text" | "icon";
+  lightColor?: string; // Override for light mode
+  darkColor?: string; // Override for dark mode
+  style?: ViewStyle;
+};
+```
+
+## File Organization
+
+### Theme Components Structure
+
+```
+components/
+  theme-components/
+    Text.tsx           // Themed Text component
+    View.tsx           // Themed View component
+    Pressable.tsx      // Themed Pressable component
+    index.ts           // Re-exports
+```
+
+### Import Patterns
+
+```tsx
+// ✅ Good - Import themed components
+import { Text, View, Pressable } from "@/components/theme-components";
+
+// ✅ Good - Import theme hook for custom styling
+import { useTheme } from "@/hooks/useTheme";
+
+// ❌ Bad - Direct React Native imports
+import { Text, View, Pressable } from "react-native";
+```
+
+## Best Practices
+
+1. **Use themed components** instead of direct React Native imports
+2. **Leverage variant props** for consistent styling
+3. **Use theme hook** for custom styling needs
+4. **Prefer component props** over manual StyleSheet creation
+5. **Maintain type safety** with proper TypeScript types
+6. **Use semantic naming** for design tokens
+7. **Apply platform-appropriate shadows** automatically
+
+## Common Patterns
+
+### Card Component
+
+```tsx
+// ✅ Good - Use themed components
+<View variant="card" padding="md" shadow="card">
+  <Text variant="h3">Card Title</Text>
+  <Text variant="body">Card content goes here</Text>
+</View>
+```
+
+### Button Component
+
+```tsx
+// ✅ Good - Use themed components
+<Pressable variant="button" onPress={handlePress}>
+  <Text variant="button" color="background">
+    Click Me
+  </Text>
+</Pressable>
+```
+
+### Custom Styling
+
+```tsx
+// ✅ Good - Use theme hook for custom needs
+const { colors, spacing } = useTheme();
+
+const styles = StyleSheet.create({
+  customContainer: {
+    backgroundColor: colors.background,
+    padding: spacing.lg,
+    borderRadius: 12,
+  },
+});
+```
+
+## Common Anti-Patterns
+
+- ❌ Using direct React Native imports instead of themed components
+- ❌ Hardcoded colors, spacing, or typography values
+- ❌ Manual StyleSheet creation when component props suffice
+- ❌ Inconsistent spacing or typography across components
+- ❌ Not using semantic naming for design tokens
+- ❌ Missing TypeScript types for component props
+- ❌ Creating custom components when themed variants exist
+
+## Migration Strategy
+
+### From React Native Imports
+
+```tsx
+// ❌ Before - Direct React Native imports
+import { Text, View, Pressable } from "react-native";
+
+// ✅ After - Themed components
+import { Text, View, Pressable } from "@/components/theme-components";
+```
+
+### From Manual Styling
+
+```tsx
+// ❌ Before - Manual styling
+<View style={{
+  backgroundColor: '#fff',
+  padding: 16,
+  borderRadius: 8,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.1,
+  shadowRadius: 4,
+  elevation: 3
+}}>
+  <Text style={{ fontSize: 18, fontWeight: 'bold' }}>Title</Text>
+</View>
+
+// ✅ After - Themed components
+<View variant="card" padding="md" shadow="card">
+  <Text variant="h3">Title</Text>
+</View>
+```
+
+### From ThemedText/ThemedView
+
+```tsx
+// ❌ Before - Old themed components
+<ThemedText type="title">Heading</ThemedText>
+<ThemedView lightColor="#f0f0f0" darkColor="#333">
+  <ThemedText type="body">Content</ThemedText>
+</ThemedView>
+
+// ✅ After - New themed components
+<Text variant="title">Heading</Text>
+<View backgroundColor="background">
+  <Text variant="body">Content</Text>
+</View>
+```

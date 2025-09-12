@@ -1,0 +1,78 @@
+---
+alwaysApply: true
+description: Expo Router — concise navigation, grouping, typing, and auth patterns
+---
+
+# Expo Router — Essentials
+
+## Layouts & Navigators
+
+- Define navigators (Stack/Tabs/Drawer) and shared UI in `_layout.tsx`.
+- It’s fine to use `Link` / `router` inside screen components for navigation.
+
+## Route Grouping
+
+- Use `()` folders to group without URL segments (e.g., `(auth)`, `(app)`).
+- Use literal folders when you _want_ the segment in the path (e.g., `auth/` → `/auth/*`).
+
+## Navigator Choice
+
+- **Tabs**: top-level sections.
+- **Stack**: flows, details, modals.
+
+## Typed Routes
+
+- Enable typed routes per docs; types generate on `expo start`.
+- Prefer absolute paths; use `Href<T>` for `Link` props and the typed `router`/`useRouter()`.
+
+```tsx
+// Example: typed Link
+import { Link, type Href } from "expo-router";
+
+export default function Example() {
+  const userHref: Href = { pathname: "/user/[id]", params: { id: "42" } };
+  return <Link href={userHref}>User 42</Link>;
+}
+```
+
+## Auth / Protected Screens (SDK 53+)
+
+### Prefer Protected Routes or Redirect over conditionally adding/removing screens.
+
+```
+// app/(app)/_layout.tsx
+import { Stack, Redirect } from 'expo-router'
+import { useSession } from '@/providers/session'
+
+export default function AppLayout() {
+	const { session } = useSession()
+	if (!session) return <Redirect href="/sign-in" />
+	return <Stack />
+}
+```
+
+## Not Found & Errors
+
+Add +not-found.tsx for unmatched routes; use documented error handling patterns.
+
+File Skeleton (minimal)
+
+```
+app/
+  _layout.tsx
+  +not-found.tsx
+  sign-in.tsx
+  (app)/
+    _layout.tsx
+    (tabs)/
+      _layout.tsx
+      index.tsx
+      profile.tsx
+  modal.tsx
+```
+
+## Avoid
+
+- Declaring a navigator inside a leaf screen.
+- Treating () groups as universally “better” (choose based on URL intent).
+- Skipping typed routes when using TS.

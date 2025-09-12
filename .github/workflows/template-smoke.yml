@@ -1,0 +1,80 @@
+name: Template Smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 7 * * 1' # weekly, 07:00 UTC Monday
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout template
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'yarn'
+
+      - name: Use Corepack
+        run: corepack enable
+
+      - name: Create fresh app from current template (degit-style)
+        run: |
+          set -euo pipefail
+          APP_DIR="$(pwd)/_tmp_app"
+          mkdir -p "$APP_DIR"
+          rsync -a --exclude '.git' --exclude 'node_modules' ./ "$APP_DIR"/
+          cd "$APP_DIR"
+          # Reset git history to mimic a new consumer
+          rm -rf .git && git init -b main
+
+          # Quick in-place rename to avoid collisions (name, slug, scheme)
+          NEW_NAME="smoke-${{ github.run_id }}"
+          sed -i.bak "s/name: 'base-project'/name: '${NEW_NAME}'/" app.config.ts
+          sed -i.bak "s/slug: 'base-project'/slug: '${NEW_NAME}'/" app.config.ts
+          sed -i.bak "s/scheme: 'base-project'/scheme: '${NEW_NAME}'/" app.config.ts
+          rm -f app.config.ts.bak
+
+          # Ensure lockfile exists (committed in template); if not, generate
+          if [ ! -f yarn.lock ]; then
+            echo "No yarn.lock; generating…" 
+            yarn install --silent
+          fi
+
+      - name: Install deps (template consumer)
+        working-directory: _tmp_app
+        run: yarn install --immutable || yarn install
+
+      - name: Typecheck
+        working-directory: _tmp_app
+        run: yarn typecheck
+
+      - name: Lint
+        working-directory: _tmp_app
+        run: yarn lint
+
+      - name: Unit tests
+        working-directory: _tmp_app
+        run: yarn test:ci
+
+      - name: Expo Doctor
+        working-directory: _tmp_app
+        run: npx --yes expo-doctor
+
+      - name: Optional prebuild (native sanity)
+        working-directory: _tmp_app
+        continue-on-error: true
+        env:
+          EXPO_NO_TELEMETRY: '1'
+          CI: 'true'
+        run: npx --yes expo prebuild --clean --non-interactive
