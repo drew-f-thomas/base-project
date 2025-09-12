@@ -1,14 +1,19 @@
 ---
-alwaysApply: true
-description: Expo Router — concise navigation, grouping, typing, and auth patterns
+globs: app/**/*.tsx
+alwaysApply: false
 ---
 
 # Expo Router — Essentials
 
+## Project Structure
+
+- Routes live in `/app`, code lives in `/src`; import app code via `@/src/...`
+
 ## Layouts & Navigators
 
 - Define navigators (Stack/Tabs/Drawer) and shared UI in `_layout.tsx`.
-- It’s fine to use `Link` / `router` inside screen components for navigation.
+- Do not declare new navigators in leaf screens; only in `_layout.tsx`.
+- It's fine to use `Link` / `router` inside screen components for navigation.
 
 ## Route Grouping
 
@@ -22,16 +27,16 @@ description: Expo Router — concise navigation, grouping, typing, and auth patt
 
 ## Typed Routes
 
-- Enable typed routes per docs; types generate on `expo start`.
+- Typed routes are enabled (`experiments.typedRoutes = true`); types generate on `expo start`.
 - Prefer absolute paths; use `Href<T>` for `Link` props and the typed `router`/`useRouter()`.
 
 ```tsx
 // Example: typed Link
-import { Link, type Href } from "expo-router";
+import { Link, type Href } from 'expo-router'
 
 export default function Example() {
-  const userHref: Href = { pathname: "/user/[id]", params: { id: "42" } };
-  return <Link href={userHref}>User 42</Link>;
+  const userHref: Href = { pathname: '/user/[id]', params: { id: '42' } }
+  return <Link href={userHref}>User 42</Link>
 }
 ```
 
@@ -39,15 +44,15 @@ export default function Example() {
 
 ### Prefer Protected Routes or Redirect over conditionally adding/removing screens.
 
-```
+```tsx
 // app/(app)/_layout.tsx
 import { Stack, Redirect } from 'expo-router'
-import { useSession } from '@/providers/session'
+import { useUserStore } from '@/src/state/userStore'
 
 export default function AppLayout() {
-	const { session } = useSession()
-	if (!session) return <Redirect href="/sign-in" />
-	return <Stack />
+  const isAuthenticated = useUserStore(s => s.isAuthenticated)
+  if (!isAuthenticated) return <Redirect href="/sign-in" />
+  return <Stack />
 }
 ```
 

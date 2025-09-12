@@ -1,5 +1,6 @@
 ---
-alwaysApply: true
+globs: **/*.ts,**/*.tsx,**/*.md,**/*.yml,**/*.json
+alwaysApply: false
 ---
 
 # Code Quality Standards
@@ -24,21 +25,23 @@ All code changes must pass pre-commit hooks before being committed:
 
 ### Naming Conventions
 
-- **Files**: Use kebab-case for file names (`user-profile.tsx`)
-- **Components**: Use PascalCase for component names (`UserProfile`)
-- **Hooks**: Use camelCase with `use` prefix (`useUserProfile`)
-- **Constants**: Use UPPER_SNAKE_CASE (`API_BASE_URL`)
+- **Components/Classes**: Use PascalCase for file names (`Box.tsx`, `ExpoStorage.ts`)
+- **Hooks**: Use camelCase with `use` prefix (`useColorMode.ts`)
+- **Plain modules/utils**: Use kebab-case (`client.ts`, `errors.ts`, `types.ts` is fine to keep)
+- **Constants**: Use UPPER_SNAKE_CASE, e.g. `EXPO_PUBLIC_API_URL` (read via `loadEnv()` in app code)
 
 ### Directory Structure
 
 ```
+app/                      # expo-router routes
 src/
-├── components/          # Reusable UI components
-├── hooks/              # Custom React hooks
-├── utils/              # Utility functions
-├── constants/          # App constants
-├── types/              # TypeScript type definitions
-└── __tests__/          # Test files
+  config/                 # Environment and app configuration
+  design-system/          # Theme + components
+  features/               # Feature-specific modules
+  lib/                    # API, storage, analytics, updates
+  state/                  # Zustand stores
+  utils/                  # Utility functions
+tests/                    # Test utils, helpers
 ```
 
 ## Import/Export Patterns
@@ -52,30 +55,37 @@ src/
 
 ```tsx
 // ✅ Good - Proper import order
-import React from 'react';
-import { View, Text } from 'react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { Button } from './Button';
+import React from 'react'
+import { Text } from '@/src/design-system/components/Text'
+import { Box } from '@/src/design-system/components/Box'
+import { useTheme } from '@/src/design-system/hooks/useTheme'
+import { Button } from './Button'
 ```
 
 ### Export Patterns
 
-- **Default exports**: Use for main component of a file
+- **Screens in `/app`**: Use default exports (Expo Router convention)
+- **Library/DS code in `/src`**: Prefer named exports
 - **Named exports**: Use for utilities, types, and multiple exports
 - **Barrel exports**: Use `index.ts` files for clean imports
 
 ```tsx
-// ✅ Good - Component with named exports
+// ✅ Good - Screen with default export (Expo Router)
+export default function ProfileScreen() {
+  return <Text>Profile</Text>
+}
+
+// ✅ Good - Design system component with named export
 export function UserProfile() {
   /* ... */
 }
 export type UserProfileProps = {
   /* ... */
-};
+}
 
 // ✅ Good - Barrel export
-export { UserProfile } from './UserProfile';
-export { UserCard } from './UserCard';
+export { UserProfile } from './UserProfile'
+export { UserCard } from './UserCard'
 ```
 
 ## TypeScript Standards
@@ -89,9 +99,9 @@ export { UserCard } from './UserCard';
 ```tsx
 // ✅ Good - Explicit types
 interface User {
-  id: string;
-  name: string;
-  email: string;
+  id: string
+  name: string
+  email: string
 }
 
 function getUser(id: string): Promise<User> {
@@ -113,14 +123,14 @@ function getUser(id: any): any {
 ```tsx
 // ✅ Good - Interface with optional props
 interface ButtonProps {
-  title: string;
-  onPress: () => void;
-  variant?: 'primary' | 'secondary';
-  disabled?: boolean;
+  children: React.ReactNode
+  onPress: () => void
+  variant?: 'primary' | 'secondary'
+  disabled?: boolean
 }
 
 export function Button({
-  title,
+  children,
   onPress,
   variant = 'primary',
   disabled = false,
@@ -141,19 +151,20 @@ export function Button({
 /**
  * A customizable button component with multiple variants
  *
- * @param title - The text to display on the button
+ * @param children - The content to display inside the button
  * @param onPress - Function to call when button is pressed
  * @param variant - Visual style variant of the button
  * @param disabled - Whether the button is disabled
  *
  * @example
  * <Button
- *   title="Click me"
  *   onPress={handlePress}
  *   variant="primary"
- * />
+ * >
+ *   Click me
+ * </Button>
  */
-export function Button({ title, onPress, variant, disabled }: ButtonProps) {
+export function Button({ children, onPress, variant, disabled }: ButtonProps) {
   // implementation
 }
 ```
@@ -168,13 +179,13 @@ export function Button({ title, onPress, variant, disabled }: ButtonProps) {
 // ✅ Good - Explains why
 // Check if user has permission before showing admin panel
 if (user.role === 'admin' && user.permissions.includes('admin_panel')) {
-  return <AdminPanel />;
+  return <AdminPanel />
 }
 
 // ❌ Bad - Explains what
 // Check if user role is admin
 if (user.role === 'admin') {
-  return <AdminPanel />;
+  return <AdminPanel />
 }
 ```
 
@@ -191,17 +202,17 @@ if (user.role === 'admin') {
 const ExpensiveComponent = React.memo(({ data, onUpdate }) => {
   const handleUpdate = useCallback(
     (id: string) => {
-      onUpdate(id);
+      onUpdate(id)
     },
     [onUpdate]
-  );
+  )
 
   useEffect(() => {
     // Effect with proper dependencies
-  }, [data]);
+  }, [data])
 
-  return <div>{/* render */}</div>;
-});
+  return <div>{/* render */}</div>
+})
 ```
 
 ### Bundle Size
@@ -250,16 +261,16 @@ const ExpensiveComponent = React.memo(({ data, onUpdate }) => {
 describe('UserProfile Component', () => {
   it('displays user name when user data is loaded', () => {
     // Arrange
-    const mockUser = { id: '1', name: 'John Doe' };
-    render(<UserProfile user={mockUser} />);
+    const mockUser = { id: '1', name: 'John Doe' }
+    render(<UserProfile user={mockUser} />)
 
     // Act
     // (No action needed for this test)
 
     // Assert
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-  });
-});
+    expect(screen.getByText('John Doe')).toBeInTheDocument()
+  })
+})
 ```
 
 ## Common Anti-Patterns
@@ -272,6 +283,19 @@ describe('UserProfile Component', () => {
 - **Magic numbers**: Use named constants instead
 - **Deep nesting**: Avoid nesting beyond 3-4 levels
 - **Side effects in render**: Use useEffect for side effects
+- **Conditional rendering with &&**: Prefer ternary over && for conditional rendering
+
+```tsx
+// ✅ Good - Use ternary for conditional rendering
+{
+  isLoading ? <LoadingSpinner /> : <Content />
+}
+
+// ❌ Bad - Using && for conditional rendering
+{
+  isLoading && <LoadingSpinner />
+}
+```
 
 ### ✅ Prefer These Patterns
 
@@ -291,301 +315,7 @@ Before submitting code for review, ensure:
 - [ ] TypeScript types are properly defined
 - [ ] Components are properly documented
 - [ ] Tests cover new functionality
-- [ ] No console.log statements in production code
-- [ ] Error handling is implemented
-- [ ] Performance considerations are addressed
-- [ ] Code is readable and maintainable
-
-# Code Quality Standards
-
-## Pre-commit Requirements
-
-All code changes must pass pre-commit hooks before being committed:
-
-### Linting
-
-- **ESLint**: All TypeScript/JavaScript files must pass ESLint rules
-- **Prettier**: All files must be properly formatted
-- **Auto-fix**: Both tools run with `--fix` to automatically resolve issues
-
-### Testing
-
-- **Jest**: All tests must pass before commit
-- **Coverage**: Maintain existing test coverage
-- **No broken tests**: Any failing tests will block the commit
-
-## File Organization
-
-### Naming Conventions
-
-- **Files**: Use kebab-case for file names (`user-profile.tsx`)
-- **Components**: Use PascalCase for component names (`UserProfile`)
-- **Hooks**: Use camelCase with `use` prefix (`useUserProfile`)
-- **Constants**: Use UPPER_SNAKE_CASE (`API_BASE_URL`)
-
-### Directory Structure
-
-```
-src/
-├── components/          # Reusable UI components
-├── hooks/              # Custom React hooks
-├── utils/              # Utility functions
-├── constants/          # App constants
-├── types/              # TypeScript type definitions
-└── __tests__/          # Test files
-```
-
-## Import/Export Patterns
-
-### Import Order
-
-1. React and React Native imports
-2. Third-party library imports
-3. Internal imports (using `@/` alias)
-4. Relative imports
-
-```tsx
-// ✅ Good - Proper import order
-import React from 'react';
-import { View, Text } from 'react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { Button } from './Button';
-```
-
-### Export Patterns
-
-- **Default exports**: Use for main component of a file
-- **Named exports**: Use for utilities, types, and multiple exports
-- **Barrel exports**: Use `index.ts` files for clean imports
-
-```tsx
-// ✅ Good - Component with named exports
-export function UserProfile() {
-  /* ... */
-}
-export type UserProfileProps = {
-  /* ... */
-};
-
-// ✅ Good - Barrel export
-export { UserProfile } from './UserProfile';
-export { UserCard } from './UserCard';
-```
-
-## TypeScript Standards
-
-### Type Safety
-
-- **No `any`**: Use proper types or `unknown` with type guards
-- **Strict mode**: Always use `strict: true` in tsconfig
-- **Explicit types**: Define types for function parameters and return values
-
-```tsx
-// ✅ Good - Explicit types
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
-function getUser(id: string): Promise<User> {
-  // implementation
-}
-
-// ❌ Bad - Using any
-function getUser(id: any): any {
-  // implementation
-}
-```
-
-### Component Props
-
-- **Interface over type**: Use interfaces for component props
-- **Optional props**: Mark optional props with `?`
-- **Default values**: Use default parameters for optional props
-
-```tsx
-// ✅ Good - Interface with optional props
-interface ButtonProps {
-  title: string;
-  onPress: () => void;
-  variant?: 'primary' | 'secondary';
-  disabled?: boolean;
-}
-
-export function Button({
-  title,
-  onPress,
-  variant = 'primary',
-  disabled = false,
-}: ButtonProps) {
-  // implementation
-}
-```
-
-## Documentation Standards
-
-### Component Documentation
-
-- **JSDoc comments**: Document complex components
-- **Prop descriptions**: Document prop purposes and types
-- **Usage examples**: Include usage examples for complex components
-
-```tsx
-/**
- * A customizable button component with multiple variants
- *
- * @param title - The text to display on the button
- * @param onPress - Function to call when button is pressed
- * @param variant - Visual style variant of the button
- * @param disabled - Whether the button is disabled
- *
- * @example
- * <Button
- *   title="Click me"
- *   onPress={handlePress}
- *   variant="primary"
- * />
- */
-export function Button({ title, onPress, variant, disabled }: ButtonProps) {
-  // implementation
-}
-```
-
-### Code Comments
-
-- **Why, not what**: Explain why code exists, not what it does
-- **Complex logic**: Comment complex business logic
-- **TODOs**: Use TODO comments for temporary workarounds
-
-```tsx
-// ✅ Good - Explains why
-// Check if user has permission before showing admin panel
-if (user.role === 'admin' && user.permissions.includes('admin_panel')) {
-  return <AdminPanel />;
-}
-
-// ❌ Bad - Explains what
-// Check if user role is admin
-if (user.role === 'admin') {
-  return <AdminPanel />;
-}
-```
-
-## Performance Guidelines
-
-### React Performance
-
-- **Memoization**: Use `React.memo` for expensive components
-- **Callback optimization**: Use `useCallback` for event handlers
-- **Effect dependencies**: Include all dependencies in useEffect
-
-```tsx
-// ✅ Good - Optimized component
-const ExpensiveComponent = React.memo(({ data, onUpdate }) => {
-  const handleUpdate = useCallback(
-    (id: string) => {
-      onUpdate(id);
-    },
-    [onUpdate]
-  );
-
-  useEffect(() => {
-    // Effect with proper dependencies
-  }, [data]);
-
-  return <div>{/* render */}</div>;
-});
-```
-
-### Bundle Size
-
-- **Tree shaking**: Use named imports for better tree shaking
-- **Code splitting**: Split large components into smaller chunks
-- **Lazy loading**: Use lazy loading for non-critical components
-
-## Error Handling
-
-### Error Boundaries
-
-- **Component errors**: Wrap components in error boundaries
-- **Fallback UI**: Provide meaningful fallback UI
-- **Error logging**: Log errors for debugging
-
-```tsx
-// ✅ Good - Error boundary with fallback
-<ErrorBoundary fallback={<ErrorFallback />}>
-  <UserProfile />
-</ErrorBoundary>
-```
-
-### Async Operations
-
-- **Loading states**: Show loading indicators for async operations
-- **Error states**: Handle and display error states
-- **Retry mechanisms**: Provide retry options for failed operations
-
-## Testing Requirements
-
-### Test Coverage
-
-- **Critical paths**: Test all critical user flows
-- **Edge cases**: Test error states and edge cases
-- **Component behavior**: Test component interactions
-
-### Test Quality
-
-- **Descriptive names**: Use clear, descriptive test names
-- **Single responsibility**: Each test should test one thing
-- **Arrange-Act-Assert**: Follow AAA pattern for test structure
-
-```tsx
-// ✅ Good - Clear test structure
-describe('UserProfile Component', () => {
-  it('displays user name when user data is loaded', () => {
-    // Arrange
-    const mockUser = { id: '1', name: 'John Doe' };
-    render(<UserProfile user={mockUser} />);
-
-    // Act
-    // (No action needed for this test)
-
-    // Assert
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-  });
-});
-```
-
-## Common Anti-Patterns
-
-### ❌ Avoid These Patterns
-
-- **Prop drilling**: Use context or state management instead
-- **Large components**: Break down components over 200 lines
-- **Inline styles**: Use StyleSheet or theme system
-- **Magic numbers**: Use named constants instead
-- **Deep nesting**: Avoid nesting beyond 3-4 levels
-- **Side effects in render**: Use useEffect for side effects
-
-### ✅ Prefer These Patterns
-
-- **Composition over inheritance**: Use component composition
-- **Single responsibility**: Each function/component should do one thing
-- **Pure functions**: Write pure functions when possible
-- **Consistent naming**: Use consistent naming conventions
-- **Type safety**: Leverage TypeScript for type safety
-- **Error boundaries**: Handle errors gracefully
-
-## Code Review Checklist
-
-Before submitting code for review, ensure:
-
-- [ ] All pre-commit hooks pass
-- [ ] Code follows naming conventions
-- [ ] TypeScript types are properly defined
-- [ ] Components are properly documented
-- [ ] Tests cover new functionality
-- [ ] No console.log statements in production code
+- [ ] No console.\* statements in production code (allow behind `__DEV__`)
 - [ ] Error handling is implemented
 - [ ] Performance considerations are addressed
 - [ ] Code is readable and maintainable

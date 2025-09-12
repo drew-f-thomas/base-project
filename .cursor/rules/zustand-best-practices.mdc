@@ -1,6 +1,7 @@
 ---
-globs: *.ts,*.tsx
 description: Zustand state management best practices and patterns
+globs: src/state/**/*.ts,src/**/*Store.ts
+alwaysApply: false
 ---
 
 # Zustand Best Practices
@@ -13,10 +14,8 @@ Always use selector functions to access specific state properties:
 
 ```typescript
 // ✅ Good - Only subscribes to specific state changes
-const hasFinishedOnboarding = useUserStore(
-  (state) => state.hasFinishedOnboarding
-);
-const userName = useUserStore((state) => state.userName);
+const isAuthenticated = useUserStore(state => state.isAuthenticated)
+const user = useUserStore(state => state.user)
 ```
 
 ### ❌ Avoid Destructuring Entire Store
@@ -25,7 +24,7 @@ Never destructure the entire store as it causes unnecessary re-renders:
 
 ```typescript
 // ❌ Bad - Subscribes to ALL state changes
-const { hasFinishedOnboarding, userName } = useUserStore();
+const { user, isAuthenticated } = useUserStore()
 ```
 
 ## Multiple State Properties
@@ -35,37 +34,61 @@ const { hasFinishedOnboarding, userName } = useUserStore();
 When accessing multiple state properties, use the `shallow` comparison:
 
 ```typescript
-import { shallow } from "zustand/shallow";
+import { shallow } from 'zustand/shallow'
 
-const { hasFinishedOnboarding, userName, isLoggedIn } = useUserStore(
-  (state) => ({
-    hasFinishedOnboarding: state.hasFinishedOnboarding,
-    userName: state.userName,
-    isLoggedIn: state.isLoggedIn,
+const { user, isAuthenticated } = useUserStore(
+  state => ({
+    user: state.user,
+    isAuthenticated: state.isAuthenticated,
   }),
   shallow
-);
+)
 ```
 
 ## Store Structure
+
+### Security Considerations
+
+**Never store sensitive data** (tokens, keys, passwords) in Zustand stores:
+
+```typescript
+// ❌ Bad - Storing sensitive data in Zustand
+type UserStore = {
+  authToken: string // Never store tokens in Zustand
+  apiKey: string // Never store keys in Zustand
+  password: string // Never store passwords in Zustand
+}
+
+// ✅ Good - Use expo-secure-store for sensitive data
+import * as SecureStore from 'expo-secure-store'
+
+// Store sensitive data securely
+await SecureStore.setItemAsync('authToken', token)
+const token = await SecureStore.getItemAsync('authToken')
+
+// Store only non-sensitive state in Zustand
+type UserState = {
+  user: User | null
+  isAuthenticated: boolean
+  setUser: (u: User | null) => void
+  logout: () => void
+}
+```
 
 ### TypeScript Store Definition
 
 Always define proper TypeScript types for your stores:
 
 ```typescript
-type UserStore = {
+type UserState = {
   // State properties
-  hasFinishedOnboarding: boolean;
-  userName: string;
-  isLoggedIn: boolean;
+  user: User | null
+  isAuthenticated: boolean
 
   // Actions
-  setHasFinishedOnboarding: (value: boolean) => void;
-  setUserName: (name: string) => void;
-  login: () => void;
-  logout: () => void;
-};
+  setUser: (u: User | null) => void
+  logout: () => void
+}
 ```
 
 ### Action Implementation
@@ -73,40 +96,34 @@ type UserStore = {
 Use proper state updates with functional updates:
 
 ```typescript
-export const useUserStore = create<UserStore>((set) => ({
-  hasFinishedOnboarding: false,
-  userName: "",
-  isLoggedIn: false,
+export const useUserStore = create<UserState>(set => ({
+  user: null,
+  isAuthenticated: false,
 
   // ✅ Good - Functional update
-  setHasFinishedOnboarding: (value: boolean) =>
-    set({ hasFinishedOnboarding: value }),
+  setUser: (u: User | null) => set({ user: u, isAuthenticated: u !== null }),
 
-  // ✅ Good - Toggle pattern
-  toggleOnboarding: () =>
-    set((state) => ({ hasFinishedOnboarding: !state.hasFinishedOnboarding })),
-
-  // ✅ Good - Multiple state updates
-  login: (name: string) => set({ isLoggedIn: true, userName: name }),
-}));
+  // ✅ Good - Logout action
+  logout: () => set({ user: null, isAuthenticated: false }),
+}))
 ```
 
 ## File Organization
 
 ### Store Location
 
-Place stores in the [store/](mdc:store/) directory following the pattern:
+Place stores in the `src/state/` directory following the pattern:
 
-- [store/userStore.ts](mdc:store/userStore.ts) - User-related state
-- [store/appStore.ts](mdc:store/appStore.ts) - App-wide state
-- [store/featureStore.ts](mdc:store/featureStore.ts) - Feature-specific state
+- `src/state/userStore.ts` - User-related state
+- `src/state/appStore.ts` - App-wide state
+- `src/state/featureStore.ts` - Feature-specific state
 
 ### Import Pattern
 
 Use consistent import patterns:
 
 ```typescript
-import { useUserStore } from "@/store/userStore";
+import { useUserStore } from '@/src/state/userStore'
 ```
 
 ## Performance Considerations
@@ -132,12 +149,18 @@ For large applications, consider splitting stores by domain:
 Test stores independently of React components:
 
 ```typescript
-import { useUserStore } from "@/store/userStore";
+import { useUserStore } from '@/src/state/userStore'
 
 // Test store actions
-const store = useUserStore.getState();
-store.setHasFinishedOnboarding(true);
-expect(useUserStore.getState().hasFinishedOnboarding).toBe(true);
+const s = useUserStore.getState()
+s.setUser({
+  id: '1',
+  email: 'a@b.com',
+  userName: 'John',
+  createdAt: '',
+  updatedAt: '',
+})
+expect(useUserStore.getState().isAuthenticated).toBe(true)
 ```
 
 ## Common Patterns
@@ -148,8 +171,8 @@ Use selectors for computed values:
 
 ```typescript
 const isUserReady = useUserStore(
-  (state) => state.hasFinishedOnboarding && state.isLoggedIn
-);
+  state => state.isAuthenticated && state.user !== null
+)
 ```
 
 ### Conditional Rendering
@@ -157,10 +180,10 @@ const isUserReady = useUserStore(
 Use selectors for conditional logic:
 
 ```typescript
-const hasFinishedOnboarding = useUserStore((state) => state.hasFinishedOnboarding);
+const isAuthenticated = useUserStore((state) => state.isAuthenticated);
 
-if (!hasFinishedOnboarding) {
-  return <Redirect href="/onboarding" />;
+if (!isAuthenticated) {
+  return <Redirect href="/login" />;
 }
 ```
 

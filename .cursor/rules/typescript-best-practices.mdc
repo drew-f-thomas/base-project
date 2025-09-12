@@ -22,13 +22,13 @@ description: TypeScript usage in an Expo React Native app — config, patterns, 
 
 ```tsx
 type UserCardProps = {
-  name: string;
-  avatarUrl?: string;
-  children?: React.ReactNode;
-};
+  name: string
+  avatarUrl?: string
+  children?: React.ReactNode
+}
 
 export function UserCard({ name, avatarUrl, children }: UserCardProps) {
-  return avatarUrl ? <Image source={{ uri: avatarUrl }} /> : null;
+  return avatarUrl ? <Image source={{ uri: avatarUrl }} /> : null
 }
 ```
 
@@ -36,15 +36,15 @@ export function UserCard({ name, avatarUrl, children }: UserCardProps) {
 
 ```tsx
 type PressableTextProps = React.ComponentPropsWithoutRef<typeof Pressable> & {
-  text: string;
-};
+  text: string
+}
 
 export function PressableText({ text, ...rest }: PressableTextProps) {
   return (
     <Pressable {...rest}>
       <Text>{text}</Text>
     </Pressable>
-  );
+  )
 }
 ```
 
@@ -54,10 +54,10 @@ export function PressableText({ text, ...rest }: PressableTextProps) {
 - Use descriptive generic names and `Array<T>` syntax
 
 ```tsx
-type AuthUser = { id: string; email: string };
+type AuthUser = { id: string; email: string }
 
-const [user, setUser] = React.useState<AuthUser | null>(null);
-const [queue, setQueue] = React.useState<Array<string>>([]);
+const [user, setUser] = React.useState<AuthUser | null>(null)
+const [queue, setQueue] = React.useState<Array<string>>([])
 ```
 
 - Prefer `as const` and `satisfies` to keep literals narrow
@@ -66,8 +66,8 @@ const [queue, setQueue] = React.useState<Array<string>>([]);
 const theme = {
   spacing: { sm: 8, md: 12, lg: 16 },
 } as const satisfies {
-  spacing: Record<"sm" | "md" | "lg", number>;
-};
+  spacing: Record<'sm' | 'md' | 'lg', number>
+}
 ```
 
 ## Type Narrowing & Exhaustiveness
@@ -76,15 +76,15 @@ const theme = {
 
 ```ts
 type LoadState =
-  | { status: "idle" }
-  | { status: "loading" }
-  | { status: "error"; message: string }
-  | { status: "success"; data: Array<string> };
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'success'; data: Array<string> }
 
 function isLoaded(
   s: LoadState
-): s is Extract<LoadState, { status: "success" }> {
-  return s.status === "success";
+): s is Extract<LoadState, { status: 'success' }> {
+  return s.status === 'success'
 }
 ```
 
@@ -94,15 +94,15 @@ function isLoaded(
 - Type search params with the route’s module path
 
 ```tsx
-import { Link, useLocalSearchParams } from "expo-router";
+import { Link, useLocalSearchParams } from 'expo-router'
 
-export function GoToProfile() {
-  return <Link href="/profile/123" />;
+export function GoToUser() {
+  return <Link href="/user/123" />
 }
 
-export default function ProfileScreen() {
-  const { id } = useLocalSearchParams<"app/(tabs)/profile/[id].tsx">();
-  return <Text>{id}</Text>;
+export default function UserScreen() {
+  const { id } = useLocalSearchParams<'app/user/[id].tsx'>()
+  return <Text>{id}</Text>
 }
 ```
 
@@ -112,49 +112,85 @@ export default function ProfileScreen() {
 - Use typed callbacks for style props
 
 ```ts
-const pressableStyle: React.ComponentProps<typeof Pressable>["style"] = ({
+const pressableStyle: React.ComponentProps<typeof Pressable>['style'] = ({
   pressed,
-}) => [styles.base, pressed ? styles.pressed : null];
+}) => [styles.base, pressed ? styles.pressed : null]
 ```
 
 - Prefer literal unions for tokens
 
 ```ts
-type SpacingKey = "sm" | "md" | "lg";
-const spacing: Record<SpacingKey, number> = { sm: 8, md: 12, lg: 16 };
+type SpacingKey = 'sm' | 'md' | 'lg'
+const spacing: Record<SpacingKey, number> = { sm: 8, md: 12, lg: 16 }
 ```
 
 ## Modules & Imports
 
-- Use the `@/*` alias for local modules
+- Use the `@/src/*` alias for local modules
 
 ```ts
-import { fetchSession } from "@/lib/session";
-import { colors } from "@/theme/colors";
+import { apiGet } from '@/src/lib/api/client'
+import { useTheme } from '@/src/design-system/hooks/useTheme'
 ```
 
-- Don’t override Expo/Metro resolution without a clear reason
+- Don't override Expo/Metro resolution without a clear reason
 
 ## Error Boundaries & Strictness
 
 - Keep `"strict": true`
 - Consider `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` for libs/utilities (opt-in only if ergonomics remain good)
 
+## Environment Variables
+
+- **Don't read `process.env` directly** in app code
+- Always use `loadEnv()` from `@/src/config/env` for type-safe environment access
+
+```ts
+// ✅ Good - Use loadEnv()
+import { loadEnv } from '@/src/config/env'
+
+const { EXPO_PUBLIC_API_URL } = loadEnv()
+
+// ❌ Bad - Direct process.env access
+const apiUrl = process.env.EXPO_PUBLIC_API_URL
+```
+
 ## Interop & Boundaries
 
 - Avoid `as` casts except at trust boundaries (native modules, JSON)
+- **Runtime validation with Zod is mandatory** for API responses using the `api()` wrapper
 - Prefer runtime validation for external data
+
+```ts
+// ✅ Good - Zod validation with apiGet helper
+import { apiGet } from '@/src/lib/api/client'
+import { z } from 'zod'
+
+const UserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+})
+
+type User = z.infer<typeof UserSchema>
+
+// API call with automatic validation
+const user = await apiGet('/users/123', UserSchema)
+
+// ❌ Bad - No validation
+const user = await fetch('/api/users/123').then(r => r.json())
+```
 
 ```ts
 type ApiResponse<TData> =
   | {
-      ok: true;
-      data: TData;
+      ok: true
+      data: TData
     }
   | {
-      ok: false;
-      error: string;
-    };
+      ok: false
+      error: string
+    }
 ```
 
 ## Testing (TS)
@@ -169,4 +205,21 @@ type ApiResponse<TData> =
 - `Array<T>` over `T[]`
 - Prefer `cond ? <X /> : null` over `cond && <X />`
 - Avoid `enum` and `namespace`; prefer union literals and objects
+- **Prefer named exports** (matches repo) and avoid default exports for types
 - Keep public exports named (avoid default for types)
+
+```ts
+// ✅ Good - Named exports
+export interface User {
+  id: string
+  name: string
+}
+
+export type UserRole = 'admin' | 'user'
+
+// ❌ Bad - Default exports for types
+export default interface User {
+  id: string
+  name: string
+}
+```
