@@ -1,0 +1,95 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":semanticCommits"],
+  "labels": ["dependencies"],
+  "rangeStrategy": "bump",
+  "prHourlyLimit": 4,
+  "rebaseWhen": "behind-base-branch",
+  "schedule": ["after 02:00 and before 06:00 on Monday"],
+  "enabledManagers": ["npm"],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "labels": ["dependencies"],
+    "schedule": ["after 02:00 and before 06:00 on Monday"]
+  },
+  "packageRules": [
+    {
+      "groupName": "expo-sdk",
+      "matchPackagePatterns": [
+        "^expo($|-.+)",
+        "^expo-.*",
+        "^@expo/.*",
+        "^expo-router$",
+        "^expo-constants$",
+        "^expo-status-bar$",
+        "^expo-splash-screen$",
+        "^expo-font$",
+        "^expo-image$",
+        "^expo-linking$",
+        "^expo-localization$",
+        "^expo-system-ui$",
+        "^expo-web-browser$",
+        "^expo-blur$",
+        "^expo-haptics$",
+        "^expo-symbols$"
+      ],
+      "rangeStrategy": "bump",
+      "prPriority": 10,
+      "stabilityDays": 3
+    },
+    {
+      "groupName": "react-native-core",
+      "matchPackagePatterns": [
+        "^react$",
+        "^react-dom$",
+        "^react-native($|-.+)",
+        "^react-native-gesture-handler$",
+        "^react-native-reanimated$",
+        "^react-native-screens$",
+        "^react-native-web$",
+        "^react-native-safe-area-context$",
+        "^react-native-webview$"
+      ],
+      "rangeStrategy": "bump",
+      "prPriority": 9,
+      "stabilityDays": 3
+    },
+    {
+      "groupName": "state-and-data",
+      "matchPackagePatterns": [
+        "^@tanstack/react-query$",
+        "^zustand$",
+        "^@hookform/resolvers$",
+        "^react-hook-form$",
+        "^zod$"
+      ],
+      "rangeStrategy": "bump",
+      "stabilityDays": 1
+    },
+    {
+      "groupName": "testing",
+      "matchPackagePatterns": [
+        "^jest($|-.+)",
+        "^jest-expo$",
+        "^@testing-library/.*",
+        "^@types/jest$",
+        "^react-test-renderer$"
+      ],
+      "rangeStrategy": "bump"
+    },
+    {
+      "groupName": "lint-and-build",
+      "matchPackagePatterns": [
+        "^eslint($|-.+)",
+        "^eslint-.*",
+        "^prettier$",
+        "^typescript$",
+        "^husky$",
+        "^lint-staged$",
+        "^@commitlint/.*"
+      ],
+      "rangeStrategy": "bump"
+    }
+  ],
+  "postUpdateOptions": ["npmDedupe"]
+}
