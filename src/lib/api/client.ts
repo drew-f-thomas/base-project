@@ -56,8 +56,7 @@ export async function api<T>(
         throw await handleHttpError(response)
       }
 
-      const text = await response.text()
-      const json = text ? JSON.parse(text) : null
+      const json = await response.json()
       const parsed = schema.safeParse(json)
 
       if (!parsed.success) {
