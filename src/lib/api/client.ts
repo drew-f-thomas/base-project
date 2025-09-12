@@ -31,6 +31,7 @@ export async function api<T>(
 
   const headers = new Headers(fetchConfig.headers)
   headers.set('Content-Type', 'application/json')
+  headers.set('Accept', 'application/json')
   if (token) {
     headers.set('Authorization', `Bearer ${token}`)
   }
@@ -43,6 +44,7 @@ export async function api<T>(
       const timeoutId = setTimeout(() => controller.abort(), timeout)
 
       const response = await fetch(url, {
+        credentials: 'omit',
         ...fetchConfig,
         headers,
         signal: controller.signal,
@@ -54,7 +56,8 @@ export async function api<T>(
         throw await handleHttpError(response)
       }
 
-      const json = await response.json()
+      const text = await response.text()
+      const json = text ? JSON.parse(text) : null
       const parsed = schema.safeParse(json)
 
       if (!parsed.success) {
@@ -69,7 +72,13 @@ export async function api<T>(
       lastError = error as Error
 
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new NetworkError('Request timeout')
+        // convert into a retryable error and continue loop
+        lastError = new NetworkError('Request timeout')
+        if (attempt < retries) {
+          await delay(Math.pow(2, attempt) * 1000)
+          continue
+        }
+        throw lastError
       }
 
       if (attempt < retries && shouldRetry(error)) {

@@ -72,7 +72,6 @@ export function Button({
           backgroundColor: 'transparent',
           paddingHorizontal: 0,
           paddingVertical: 0,
-          minHeight: 'auto' as any,
         }
       default:
         return {

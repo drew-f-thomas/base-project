@@ -30,6 +30,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     'expo-router',
     [
+      '@sentry/react-native/expo',
+      {
+        url: 'https://sentry.io/',
+        project: 'YOUR_PROJECT',
+        organization: 'YOUR_ORG',
+        // SENTRY_AUTH_TOKEN must come from env
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         image: './assets/images/splash-icon.png',

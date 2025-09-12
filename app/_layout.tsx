@@ -10,9 +10,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import 'react-native-reanimated'
 
-import { useColorScheme } from 'react-native'
-import { ThemeProvider } from '@/src/design-system/ThemeProvider'
+import { ThemeProvider, useTheme } from '@/src/design-system/ThemeProvider'
 import { validateEnvironment } from '@/src/config/env'
+import { ErrorBoundary } from '@/src/design-system/components/ErrorBoundary'
 
 // Validate environment on app start
 if (__DEV__) {
@@ -23,6 +23,31 @@ if (__DEV__) {
   }
 }
 
+// Reenable after updating .env with correct DSN
+//
+// import * as Sentry from '@sentry/react-native'
+// import * as Application from 'expo-application'
+// import * as Device from 'expo-device'
+// import { loadEnv } from '@/src/config/env'
+//
+// const { SENTRY_DSN } = loadEnv()
+// Sentry.init({
+//   dsn: SENTRY_DSN || '',
+//   tracesSampleRate: __DEV__ ? 1 : 0.2,
+//   profilesSampleRate: __DEV__ ? 1 : 0.2,
+// })
+// Sentry.setContext('app', {
+//   appName: Application.applicationName,
+//   appVersion: Application.nativeApplicationVersion,
+//   appBuild: Application.nativeBuildVersion,
+// })
+// Sentry.setContext('device', {
+//   brand: Device.brand,
+//   modelName: Device.modelName,
+//   osName: Device.osName,
+//   osVersion: Device.osVersion,
+// })
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -32,8 +57,19 @@ const queryClient = new QueryClient({
   },
 })
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme()
+function NavigationWrapper({ children }: { children: React.ReactNode }) {
+  const { colorScheme } = useTheme()
+
+  return (
+    <NavigationThemeProvider
+      value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
+    >
+      {children}
+    </NavigationThemeProvider>
+  )
+}
+
+function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   })
@@ -45,19 +81,22 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <ThemeProvider colorScheme={colorScheme || undefined}>
-          <NavigationThemeProvider
-            value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}
-          >
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-            <StatusBar style="auto" />
-          </NavigationThemeProvider>
-        </ThemeProvider>
-      </QueryClientProvider>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <ThemeProvider>
+            <NavigationWrapper>
+              <Stack>
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <StatusBar style="auto" />
+            </NavigationWrapper>
+          </ThemeProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
     </GestureHandlerRootView>
   )
 }
+
+export default RootLayout
+// export default Sentry.wrap(RootLayout)

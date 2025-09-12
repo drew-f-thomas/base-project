@@ -116,7 +116,8 @@ export function Modal({
                 <Button
                   variant="ghost"
                   onPress={onClose}
-                  style={{ minWidth: 'auto', paddingHorizontal: 8 }}
+                  accessibilityLabel="Close modal"
+                  style={{ paddingHorizontal: 8 }}
                 >
                   ✕
                 </Button>
