@@ -11,15 +11,28 @@ All code changes must pass pre-commit hooks before being committed:
 
 ### Linting
 
-- **ESLint**: All TypeScript/JavaScript files must pass ESLint rules
-- **Prettier**: All files must be properly formatted
-- **Auto-fix**: Both tools run with `--fix` to automatically resolve issues
+- **ESLint**: All TypeScript/JavaScript files must pass ESLint rules (no errors)
+- **Prettier**: All files must be properly formatted (no diffs on `yarn format:check`)
+- **Auto-fix**: Both tools run with `--fix` where applicable
 
 ### Testing
 
 - **Jest**: All tests must pass before commit
 - **Coverage**: Maintain existing test coverage
 - **No broken tests**: Any failing tests will block the commit
+
+### Definition of Done (Strict)
+
+The repository must satisfy **all** of the following before considering a change finished:
+
+```bash
+yarn typecheck
+yarn lint
+yarn format:check
+yarn test:ci
+```
+
+If any of these fail, the assistant must continue updating code until they all pass.
 
 ## File Organization
 

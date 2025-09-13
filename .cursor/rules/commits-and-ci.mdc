@@ -18,6 +18,15 @@ alwaysApply: true
   - `yarn test`
   - `yarn format:check`
 
+## Definition of Done (AI Agent)
+
+- After modifying code, the agent must ensure:
+  - **Zero ESLint errors** (`yarn lint`)
+  - **Zero Prettier diffs** (`yarn format:check`)
+  - **TypeScript passes** (`yarn typecheck`)
+  - **All tests pass** (`yarn test:ci`)
+- If any check fails, the task is **not complete**; continue updating code until all pass.
+
 ## Releases
 
 - For template releases, follow `docs/release-playbook.md`.
