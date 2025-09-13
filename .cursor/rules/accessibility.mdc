@@ -1,0 +1,41 @@
+---
+description: Accessibility best practices for components and screens
+globs: app/**/*.tsx,src/**/*.tsx
+alwaysApply: false
+---
+
+# Accessibility
+
+## Interactive Components
+
+- Always set `accessibilityRole` and `accessibilityLabel`.
+
+```tsx
+<Button accessibilityLabel="Save changes" accessibilityRole="button" />
+```
+
+## Buttons
+
+- Prefer DS `Button`.
+- If using `Pressable`, wire state + labels manually.
+
+```tsx
+<Pressable
+  accessibilityRole="button"
+  accessibilityLabel="Submit"
+  onPress={submit}
+/>
+```
+
+## Inputs
+
+- Inputs must have labels and error text for screen readers.
+
+```tsx
+<Input label="Email" error="Invalid email" />
+```
+
+## Color Contrast
+
+- Do not rely on color alone to indicate state.
+- Always include icons, text, or other cues.

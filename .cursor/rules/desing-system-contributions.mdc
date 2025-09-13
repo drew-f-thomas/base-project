@@ -1,0 +1,31 @@
+---
+globs: src/design-system/**/*.tsx
+alwaysApply: false
+description: Guidelines for contributing to the design system
+---
+
+# Design System Contribution
+
+## When to Add a Token
+
+- Add a new token when a value repeats across components.
+- Use inline styles only for one-off experiments.
+
+## Component Rules
+
+- Forward refs when wrapping RN primitives.
+- Accept DS props first (`variant`, `size`, etc.).
+- Hoist `style` last in the prop order.
+
+```tsx
+export const Button = forwardRef<View, ButtonProps>(
+  ({ variant = 'primary', style, ...rest }, ref) => (
+    <Pressable ref={ref} style={[variantStyles[variant], style]} {...rest} />
+  )
+)
+```
+
+## Theming
+
+- Every DS component must render correctly in **light** and **dark** mode.
+- ❌ Do not depend on external styles for theming.

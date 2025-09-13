@@ -1,0 +1,24 @@
+---
+description: Commit and CI requirements
+alwaysApply: true
+---
+
+# Commits and CI
+
+## Conventional Commits
+
+- Follow `commitlint.config.js` types:
+  - `feat`, `fix`, `chore`, `docs`, `test`, `refactor`, `perf`, `style`.
+
+## Pull Request Gates
+
+- PRs must pass:
+  - `yarn typecheck`
+  - `yarn lint`
+  - `yarn test`
+  - `yarn format:check`
+
+## Releases
+
+- For template releases, follow `docs/release-playbook.md`.
+- Tag versions with `vX.Y.Z`.

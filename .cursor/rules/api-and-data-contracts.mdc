@@ -1,0 +1,71 @@
+---
+description: API client, schema validation, and data contracts
+globs: src/lib/api/**/*.ts
+alwaysApply: false
+---
+
+# API and Data Contracts
+
+## Network Calls
+
+- **All network calls** must go through `api`, `apiGet`, `apiPost`, `apiPut`, `apiDelete`, etc.
+- ❌ No raw `fetch` in app code or features.
+
+```ts
+// ✅ Good - use apiGet with Zod validation
+import { apiGet } from '@/src/lib/api/client'
+import { UserSchema } from '@/src/lib/api/schemas'
+
+const user = await apiGet('/users/123', UserSchema)
+```
+
+## Schemas
+
+- Define request/response schemas in `@/src/lib/api/schemas`.
+- Use Zod for runtime validation.
+- Export both schema + inferred type.
+
+```ts
+export const UserSchema = z.object({
+  id: z.string(),
+  email: z.string().email(),
+})
+
+export type User = z.infer<typeof UserSchema>
+```
+
+## Error Model
+
+- Rethrow errors using `ApiError` subclasses.
+- Never show raw `fetch` or backend error messages directly to users.
+- Map to user-facing strings at the UI layer.
+
+```ts
+try {
+  await apiGet('/users/404', UserSchema)
+} catch (e) {
+  if (e instanceof ApiError) {
+    // log + show safe fallback
+  }
+}
+```
+
+## Retries & Timeouts
+
+- Use `RequestConfig` (defaults in the client).
+- Only override when business requirements differ.
+
+```ts
+await apiGet('/endpoint', Schema, { timeoutMs: 3000, retry: 2 })
+```
+
+## Auth
+
+- Tokens come from `auth.ts` helpers.
+- ❌ Never inline headers in screens/components.
+
+```ts
+// ✅ Good
+import { getAuthHeaders } from '@/src/lib/api/auth'
+const headers = await getAuthHeaders()
+```
